@@ -1,0 +1,10 @@
+n = PostProcessing.NbViews - 1;
+If(n >= 0)
+View[n].ShowScale = 0;
+View[n].VectorType = 5;
+View[n].ExternalView = 0;
+View[n].DisplacementFactor = 1 ;
+View[n].PointType = 1;
+View[n].PointSize = 5;
+View[n].LineWidth = 2;
+EndIf
