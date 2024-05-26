@@ -1,4 +1,6 @@
 #include "onelab.h"
+#include <eigen3/Eigen/Sparse>
+#include <filesystem>
 #include <iostream>
 #include <math.h>
 #include <memory>
@@ -7,20 +9,13 @@
 
 using OnelabClient = std::shared_ptr<onelab::client>;
 
-void exportMsh(const std::string &path, double le1, double le2) {
-  FILE *mshFile = fopen((path + "pend.msh").c_str(), "w");
-  if (!mshFile)
-    return;
-  fprintf(mshFile, "$MeshFormat\n2.2 0 8\n$EndMeshFormat\n");
-  fprintf(mshFile, "$Nodes\n3\n1 0 0 0\n2 0 %f 0\n3 0 %f 0\n$EndNodes\n", -le1,
-          -le1 - le2);
-  fprintf(mshFile, "$Elements\n3\n1 1 2 0 1 1 2\n2 1 2 0 1 2 3\n3 15 2 0 2 3\n"
-                   "$EndElements\n");
-  fclose(mshFile);
+void exportMsh(const std::string &path) {
+  std::filesystem::copy_file(path + "beam_initial.msh",
+                             path + "beam_modified.msh");
 }
 
 void exportMshOpt(const std::string &path) {
-  FILE *optFile = fopen((path + "pend.msh.opt").c_str(), "w");
+  FILE *optFile = fopen((path + "beam.msh.opt").c_str(), "w");
   if (!optFile)
     return;
   fprintf(optFile, "n = PostProcessing.NbViews - 1;\n");
@@ -33,14 +28,25 @@ void exportMshOpt(const std::string &path) {
   fclose(optFile);
 }
 
-void exportIter(const std::string &path, int iter, double t, double x1,
-                double y1, double x2, double y2) {
-  FILE *mshFile = fopen((path + "pend.msh").c_str(), "a");
+void exportIter(const std::string &path, int iter, double t) {
+  FILE *mshFile = fopen((path + "beam_modified.msh").c_str(), "a");
   if (!mshFile)
     return;
-  fprintf(mshFile, "$NodeData\n1\n\"motion\"\n1\n\t%f\n3\n\t%d\n3\n", t, iter);
-  fprintf(mshFile, "\t3\n\t1 0 0 0\n\t2 %f %f 0\n\t3 %f %f 0\n$EndNodeData\n",
-          x1, y1, x2, y2);
+  fprintf(mshFile, "$NodeData\n\
+          1\n\
+          \"motion\"\n\
+          1\n\
+          \t%f\n\
+          3\n\
+          \t%d\n\
+          3\n",
+          t, iter);
+
+  fprintf(mshFile, "\t3\n\
+          \t1 0 0 0\n\
+          \t2 0 0 0\n\
+          \t3 0 0 0\n\
+          $EndNodeData\n");
   fclose(mshFile);
 }
 
@@ -79,6 +85,7 @@ void addNumberChoice(OnelabClient client, const std::string &name,
     client->set(ns[0]);
   }
 }
+
 int main(int argc, char **argv) {
   std::string name, address;
   for (int i = 0; i < argc; i++) {
@@ -115,7 +122,6 @@ int main(int argc, char **argv) {
 
   std::map<std::string, std::string> attr;
 
-  double l = defineNumber(client, "Geom/arm length [m]", 1.0, attr);
   double time = defineNumber(client, "Time [s]", 0., attr);
   double dt = defineNumber(client, "Time step [s]", 0.001, attr);
   double tmax = defineNumber(client, "Max time [s]", 20, attr);
@@ -127,8 +133,6 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  double l1 = l;
-  double l2 = l;
   double m1 = m;
   double m2 = m;
   double refr = 0.0;
@@ -137,10 +141,9 @@ int main(int argc, char **argv) {
 
   while (time < tmax) {
 
+    exportMshOpt(path);
     time += dt;
     refr += dt;
-
-    exportMshOpt(path);
 
     if (refr >= refresh) {
       refr = 0;
@@ -156,9 +159,9 @@ int main(int argc, char **argv) {
       if (ns.size() && ns[0].getValue() == "stop")
         break;
 
-      exportMsh(path, l1, l2);
-      /* exportIter(path, iter, time, x1, y1 + l1, x2, y2 + l1 + l2); */
-      client->sendMergeFileRequest(path + "pend.msh");
+      exportMsh(path);
+      exportIter(path, iter, time);
+      client->sendMergeFileRequest(path + "beam.msh");
       iter += 1;
     }
   }

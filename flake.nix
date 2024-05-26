@@ -16,7 +16,7 @@
               devShell = pkgs'.mkShell {
                 # a list of packages to add to the shell environment
                 #
-                nativeBuildInputs = [ pkgs'.bear pkgs'.clang ];
+                nativeBuildInputs = [ pkgs'.bear pkgs'.clang pkgs'.gtest ];
                 buildInputs = with pkgs'; [clang-tools clang gtest ];
                 packages = with pkgs'; [ 
                     gmsh 
@@ -25,7 +25,6 @@
                     catch2
                     cmake
                     eigen
-                ];
                 ];
 
                 shellHook = ''
