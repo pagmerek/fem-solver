@@ -1,4 +1,5 @@
 #include "MeshParser.h"
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -8,6 +9,10 @@
 #include <vector>
 
 enum class MshBlock { MeshFormat, Nodes, Elements, NodeData };
+
+bool is_number(const std::string &s) {
+  return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
+}
 
 std::map<std::string, MshBlock> mapStringToMshBlock = {
     {"$MeshFormat", MshBlock::MeshFormat},
@@ -125,7 +130,9 @@ std::optional<Elements> parseElements(std::ifstream &infile) {
       for (int k = 0; k < element_type + 1; k++) {
         std::string vertex;
         std::getline(line_stream, vertex, ' ');
-        vertices.push_back(std::stoi(vertex));
+        if (is_number(vertex)) {
+          vertices.push_back(std::stoi(vertex));
+        }
       }
       elements.push_back(Element{std::stoi(element_tag), vertices});
     }
@@ -165,7 +172,6 @@ std::optional<NodeData> parseNodeData(std::ifstream &infile) {
 
     auto nodes = std::vector<Node>();
 
-    std::cout << num_nodes << std::endl;
     for (int i = 0; i < num_nodes; i++) {
       std::getline(infile, line);
       std::istringstream node_data(line);
@@ -230,12 +236,14 @@ Mesh::Mesh(std::filesystem::path path) {
       }
     }
   }
+
   infile.close();
 }
 
 std::string Mesh::serialize() {
   std::ostringstream mesh;
 
+  mesh.precision(16);
   mesh << "$MeshFormat\n";
   mesh << format.version << ' ' << format.file_type << ' ' << format.data_size
        << "\n";
@@ -271,32 +279,45 @@ std::string Mesh::serialize() {
 
     for (int j = 0; j < elements.blocks[i].num_elements_in_block; j++) {
       mesh << elements.blocks[i].elements[j].element_tag << ' ';
-      for (int k = 0; k < elements.blocks[i].element_type + 1; k++) {
-        if (k != elements.blocks[i].element_type) {
+      for (int k = 0; k < elements.blocks[i].entity_dim + 1; k++) {
+        if (k != elements.blocks[i].entity_dim) {
           mesh << elements.blocks[i].elements[j].vertices[k] << ' ';
         } else {
-          mesh << elements.blocks[i].elements[j].vertices[k] << '\n';
+          mesh << elements.blocks[i].elements[j].vertices[k] << " \n";
         }
       }
     }
   }
   mesh << "$EndElements\n";
 
-  mesh << "$NodeData\n";
-  mesh << "1\n";
-  mesh << node_data.string_tag << '\n';
-  mesh << "1\n";
-  mesh << node_data.time << '\n';
-  mesh << "3\n";
-  mesh << node_data.time_step << '\n';
-  mesh << node_data.num_components << '\n';
-  mesh << node_data.num_nodes << '\n';
+  if (!node_data.nodes.empty()) {
+    mesh << "$NodeData\n";
+    mesh << "1\n";
+    mesh << node_data.string_tag << '\n';
+    mesh << "1\n";
+    mesh << node_data.time << '\n';
+    mesh << "3\n";
+    mesh << node_data.time_step << '\n';
+    mesh << node_data.num_components << '\n';
+    mesh << node_data.num_nodes << '\n';
 
-  for (int i = 0; i < node_data.num_nodes; i++) {
-    mesh << node_data.nodes[i].node_tag << ' ' << node_data.nodes[i].x << ' '
-         << node_data.nodes[i].y << ' ' << node_data.nodes[i].z << '\n';
+    for (int i = 0; i < node_data.num_nodes; i++) {
+      mesh << node_data.nodes[i].node_tag << ' ' << node_data.nodes[i].x << ' '
+           << node_data.nodes[i].y << ' ' << node_data.nodes[i].z << '\n';
+    }
+    mesh << "$EndNodeData\n";
   }
-  mesh << "$EndNodeData\n";
 
   return mesh.str();
+}
+
+std::vector<Node> Mesh::getAllNodes() {
+  auto all_nodes = std::vector<Node>();
+  for (int i = 0; i < this->nodes.num_blocks; i++) {
+    auto block_nodes = this->nodes.blocks[i].nodes;
+    all_nodes.reserve(all_nodes.size() +
+                      distance(block_nodes.begin(), block_nodes.end()));
+    all_nodes.insert(all_nodes.end(), block_nodes.begin(), block_nodes.end());
+  }
+  return all_nodes;
 }

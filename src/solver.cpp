@@ -1,6 +1,9 @@
+#include "MeshParser.h"
 #include "onelab.h"
-#include <eigen3/Eigen/Sparse>
+#include <cmath>
+/* #include <eigen3/Eigen/Sparse> */
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <math.h>
 #include <memory>
@@ -8,11 +11,6 @@
 #include <vector>
 
 using OnelabClient = std::shared_ptr<onelab::client>;
-
-void exportMsh(const std::string &path) {
-  std::filesystem::copy_file(path + "beam_initial.msh",
-                             path + "beam_modified.msh");
-}
 
 void exportMshOpt(const std::string &path) {
   FILE *optFile = fopen((path + "beam.msh.opt").c_str(), "w");
@@ -28,26 +26,13 @@ void exportMshOpt(const std::string &path) {
   fclose(optFile);
 }
 
-void exportIter(const std::string &path, int iter, double t) {
-  FILE *mshFile = fopen((path + "beam_modified.msh").c_str(), "a");
-  if (!mshFile)
-    return;
-  fprintf(mshFile, "$NodeData\n\
-          1\n\
-          \"motion\"\n\
-          1\n\
-          \t%f\n\
-          3\n\
-          \t%d\n\
-          3\n",
-          t, iter);
-
-  fprintf(mshFile, "\t3\n\
-          \t1 0 0 0\n\
-          \t2 0 0 0\n\
-          \t3 0 0 0\n\
-          $EndNodeData\n");
-  fclose(mshFile);
+void updateView(Mesh &mesh, double time, int iter, std::vector<Node> nodes) {
+  mesh.node_data.string_tag = "\"motion\"";
+  mesh.node_data.time = time;
+  mesh.node_data.time_step = iter;
+  mesh.node_data.num_nodes = nodes.size();
+  mesh.node_data.num_components = 3;
+  mesh.node_data.nodes = nodes;
 }
 
 double defineNumber(OnelabClient client, const std::string &name, double value,
@@ -113,7 +98,7 @@ int main(int argc, char **argv) {
   std::string path(argv[0]);
   int islash = (int)path.find_last_of("/\\");
   if (islash > 0)
-    path = path.substr(0, islash + 1);
+    path = path.substr(0, islash + 1) + "../../";
   else
     path = "";
 
@@ -123,7 +108,7 @@ int main(int argc, char **argv) {
   std::map<std::string, std::string> attr;
 
   double time = defineNumber(client, "Time [s]", 0., attr);
-  double dt = defineNumber(client, "Time step [s]", 0.001, attr);
+  double dt = defineNumber(client, "Time step [s]", 0.01, attr);
   double tmax = defineNumber(client, "Max time [s]", 20, attr);
   double refresh = defineNumber(client, "Refresh interval [s]", 0.05, attr);
   attr["Highlight"] = "Pink";
@@ -140,10 +125,10 @@ int main(int argc, char **argv) {
   time = 0.0;
 
   while (time < tmax) {
-
-    exportMshOpt(path);
     time += dt;
     refr += dt;
+
+    exportMshOpt(path);
 
     if (refr >= refresh) {
       refr = 0;
@@ -159,8 +144,28 @@ int main(int argc, char **argv) {
       if (ns.size() && ns[0].getValue() == "stop")
         break;
 
-      exportMsh(path);
-      exportIter(path, iter, time);
+      Mesh mesh(path + "beam_initial.msh");
+
+      auto motion_nodes = mesh.getAllNodes();
+      for (auto &node : motion_nodes) {
+        node.x = 0;
+        node.y = 0;
+        node.z = 0;
+      }
+
+      for (auto &node : motion_nodes) {
+        if (node.node_tag > 18 && node.node_tag < 24) {
+          node.x = 0;
+          node.y = -abs(sin(time));
+          node.z = 0;
+        }
+      }
+
+      updateView(mesh, time, iter, motion_nodes);
+      std::ofstream updated(path + "beam.msh");
+      updated << mesh.serialize();
+      updated.close();
+
       client->sendMergeFileRequest(path + "beam.msh");
       iter += 1;
     }

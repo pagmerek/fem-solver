@@ -1,5 +1,6 @@
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -49,11 +50,11 @@ struct Nodes {
 
 struct NodeData {
   std::string string_tag;
-  double time;
-  int time_step;
-  int num_components;
-  int num_nodes;
-  std::vector<Node> nodes;
+  double time = 0;
+  int time_step = 0;
+  int num_components = 0;
+  int num_nodes = 0;
+  std::vector<Node> nodes = std::vector<Node>();
 };
 
 struct MeshFormat {
@@ -69,7 +70,11 @@ public:
   Elements elements;
   NodeData node_data;
 
+  Mesh();
+
   Mesh(std::filesystem::path path);
 
   std::string serialize();
+
+  std::vector<Node> getAllNodes();
 };

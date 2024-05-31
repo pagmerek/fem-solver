@@ -91,7 +91,7 @@ TEST(MeshParserTest, CorrectlyParsesNodeData) {
 }
 
 TEST(MeshParserTest, CorrectlySerializesMeshObj) {
-  auto path = "./assets/example_mesh.msh";
+  auto path = "../beam_initial.msh";
   auto mesh = Mesh(path);
   std::string serialized = mesh.serialize();
 
@@ -100,4 +100,24 @@ TEST(MeshParserTest, CorrectlySerializesMeshObj) {
   buffer << infile.rdbuf();
 
   EXPECT_EQ(serialized, buffer.str());
+}
+
+TEST(MeshParserTest, CorrectlyReturnsAllNodes) {
+  auto path = "./assets/example_mesh.msh";
+  auto mesh = Mesh(path);
+
+  auto all_nodes = mesh.getAllNodes();
+  auto nodes = std::vector<Node>{
+      Node{1, 0, 0, 0}, Node{2, 1, 0, 0}, Node{3, 1, 1, 0},
+      Node{4, 0, 1, 0}, Node{5, 2, 0, 0}, Node{6, 2, 1, 0},
+
+  };
+
+  for (int i = 0; i < all_nodes.size(); i++) {
+    EXPECT_EQ(all_nodes[i].node_tag, nodes[i].node_tag);
+
+    EXPECT_EQ(all_nodes[i].x, nodes[i].x);
+    EXPECT_EQ(all_nodes[i].y, nodes[i].y);
+    EXPECT_EQ(all_nodes[i].z, nodes[i].z);
+  }
 }
