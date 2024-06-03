@@ -1,8 +1,10 @@
-#include "../src/MeshParser.h"
+#include "../src/utils/MeshParser.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+
+namespace cufem {
 
 TEST(MeshParserTest, CorrectlyParsesMeshFormat) {
   auto mesh = Mesh("./assets/example_mesh.msh");
@@ -121,3 +123,4 @@ TEST(MeshParserTest, CorrectlyReturnsAllNodes) {
     EXPECT_EQ(all_nodes[i].z, nodes[i].z);
   }
 }
+} // namespace cufem

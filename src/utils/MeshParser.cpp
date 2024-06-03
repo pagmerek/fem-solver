@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+namespace cufem {
+
 enum class MshBlock { MeshFormat, Nodes, Elements, NodeData };
 
 bool is_number(const std::string &s) {
@@ -321,3 +323,15 @@ std::vector<Node> Mesh::getAllNodes() {
   }
   return all_nodes;
 }
+
+void Mesh::updateNodeData(std::string tag, double time, int iter,
+                          std::vector<Node> nodes) {
+  this->node_data.string_tag = tag;
+  this->node_data.time = time;
+  this->node_data.time_step = iter;
+  this->node_data.num_nodes = nodes.size();
+  this->node_data.num_components = 3;
+  this->node_data.nodes = nodes;
+}
+
+} // namespace cufem

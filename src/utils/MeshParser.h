@@ -1,8 +1,9 @@
 
 #include <filesystem>
-#include <optional>
 #include <string>
 #include <vector>
+
+namespace cufem {
 
 struct Node {
   int node_tag;
@@ -77,4 +78,8 @@ public:
   std::string serialize();
 
   std::vector<Node> getAllNodes();
+
+  void updateNodeData(std::string tag, double time, int iter,
+                      std::vector<Node> motions);
 };
+} // namespace cufem

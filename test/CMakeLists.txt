@@ -19,5 +19,17 @@ target_link_libraries(
     GTest::gtest_main
 )
 
+add_executable(
+    SolverEigenTest
+    SolverEigenTest.cpp
+    )
+
+target_link_libraries(
+    SolverEigenTest
+    SolverFEM
+    GTest::gtest_main
+)
+
 include(GoogleTest)
 gtest_discover_tests(MeshParserTest WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test/")
+gtest_discover_tests(SolverEigenTest WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test/")
