@@ -9,13 +9,13 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_executable(
-    MeshParserTest
-    MeshParserTest.cpp
+    MeshTest
+    MeshTest.cpp
     )
 
 target_link_libraries(
-    MeshParserTest
-    MeshParser
+    MeshTest
+    Mesh
     GTest::gtest_main
 )
 
@@ -26,10 +26,11 @@ add_executable(
 
 target_link_libraries(
     SolverEigenTest
+    Mesh
     SolverFEM
     GTest::gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(MeshParserTest WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test/")
+gtest_discover_tests(MeshTest WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test/")
 gtest_discover_tests(SolverEigenTest WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test/")

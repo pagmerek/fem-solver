@@ -1,3 +1,4 @@
+#pragma once
 
 #include <filesystem>
 #include <string>
@@ -78,6 +79,9 @@ public:
   std::string serialize();
 
   std::vector<Node> getAllNodes();
+  void updateNodes(std::vector<Node> &nodes);
+
+  std::vector<Element> getAllElements();
 
   void updateNodeData(std::string tag, double time, int iter,
                       std::vector<Node> motions);

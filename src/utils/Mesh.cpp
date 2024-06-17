@@ -1,4 +1,4 @@
-#include "MeshParser.h"
+#include "Mesh.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -322,6 +322,30 @@ std::vector<Node> Mesh::getAllNodes() {
     all_nodes.insert(all_nodes.end(), block_nodes.begin(), block_nodes.end());
   }
   return all_nodes;
+}
+
+void Mesh::updateNodes(std::vector<Node> &motion) {
+  int k = 0;
+  for (int i = 0; i < this->nodes.num_blocks; i++) {
+    auto block_nodes = this->nodes.blocks[i].nodes;
+    for (int j = 0; j < block_nodes.size(); j++) {
+      this->nodes.blocks[i].nodes[j].x += motion[k + j].x;
+      this->nodes.blocks[i].nodes[j].y += motion[k + j].y;
+    }
+    k += this->nodes.blocks[i].nodes.size();
+  }
+}
+
+std::vector<Element> Mesh::getAllElements() {
+  auto all_elements = std::vector<Element>();
+  for (int i = 0; i < this->elements.num_blocks; i++) {
+    auto block_elements = this->elements.blocks[i].elements;
+    all_elements.reserve(all_elements.size() + distance(block_elements.begin(),
+                                                        block_elements.end()));
+    all_elements.insert(all_elements.end(), block_elements.begin(),
+                        block_elements.end());
+  }
+  return all_elements;
 }
 
 void Mesh::updateNodeData(std::string tag, double time, int iter,

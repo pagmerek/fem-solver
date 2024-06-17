@@ -1,4 +1,4 @@
-#include "../src/utils/MeshParser.h"
+#include "../src/utils/Mesh.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 #include <fstream>
@@ -6,7 +6,7 @@
 
 namespace cufem {
 
-TEST(MeshParserTest, CorrectlyParsesMeshFormat) {
+TEST(MeshTest, CorrectlyParsesMeshFormat) {
   auto mesh = Mesh("./assets/example_mesh.msh");
 
   EXPECT_EQ(mesh.format.version, 4.1);
@@ -14,7 +14,7 @@ TEST(MeshParserTest, CorrectlyParsesMeshFormat) {
   EXPECT_EQ(mesh.format.data_size, 8);
 }
 
-TEST(MeshParserTest, CorrectlyParsesNodes) {
+TEST(MeshTest, CorrectlyParsesNodes) {
   auto mesh = Mesh("./assets/example_mesh.msh");
 
   EXPECT_EQ(mesh.nodes.num_blocks, 1);
@@ -42,7 +42,7 @@ TEST(MeshParserTest, CorrectlyParsesNodes) {
   }
 }
 
-TEST(MeshParserTest, CorrectlyParsesElements) {
+TEST(MeshTest, CorrectlyParsesElements) {
   auto mesh = Mesh("./assets/example_mesh.msh");
 
   EXPECT_EQ(mesh.elements.num_blocks, 1);
@@ -68,7 +68,7 @@ TEST(MeshParserTest, CorrectlyParsesElements) {
   EXPECT_EQ(mesh.elements.blocks[0].elements[1].vertices, elements[1].vertices);
 }
 
-TEST(MeshParserTest, CorrectlyParsesNodeData) {
+TEST(MeshTest, CorrectlyParsesNodeData) {
   auto mesh = Mesh("./assets/example_mesh.msh");
 
   EXPECT_EQ(mesh.node_data.string_tag, std::string("\"My view\""));
@@ -92,7 +92,7 @@ TEST(MeshParserTest, CorrectlyParsesNodeData) {
   }
 }
 
-TEST(MeshParserTest, CorrectlySerializesMeshObj) {
+TEST(MeshTest, CorrectlySerializesMeshObj) {
   auto path = "../beam_initial.msh";
   auto mesh = Mesh(path);
   std::string serialized = mesh.serialize();
@@ -104,7 +104,7 @@ TEST(MeshParserTest, CorrectlySerializesMeshObj) {
   EXPECT_EQ(serialized, buffer.str());
 }
 
-TEST(MeshParserTest, CorrectlyReturnsAllNodes) {
+TEST(MeshTest, CorrectlyReturnsAllNodes) {
   auto path = "./assets/example_mesh.msh";
   auto mesh = Mesh(path);
 
